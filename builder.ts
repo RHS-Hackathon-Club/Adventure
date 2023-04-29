@@ -1,8 +1,10 @@
-export interface IO {
+export interface UI {
 
-    out(text: string): void;
+    print(text: string): void;
 
-    in(callback: (text: string) => void): void;
+    printOption(key: string, choice: string): void;
+
+    input(callback: (text: string) => void): void;
 
     get(link: string, callback: (text: string) => void): void;
 
@@ -10,13 +12,13 @@ export interface IO {
 
 var _queue = Promise.resolve();
 
-function queue(node: BaseNode, io: IO) {
+function queue(node: BaseNode, io: UI) {
     _queue = _queue.then(node.play.bind(node, io));
 }
 
 export interface BaseNode {
 
-    play(io: IO): void;
+    play(io: UI): void;
 
 }
 
@@ -24,8 +26,8 @@ class TBDNode implements BaseNode {
 
     private constructor() { }
 
-    play(io: IO) {
-        io.out("You've reached a dead end!");
+    play(io: UI) {
+        io.print("You've reached a dead end!");
     }
 
     static #node: TBDNode;
@@ -50,8 +52,8 @@ class TextNode implements BaseNode {
         this.node = node;
     }
 
-    play(io: IO) {
-        io.out(this.text);
+    play(io: UI) {
+        io.print(this.text);
         queue(this.node, io);
     }
 
@@ -67,14 +69,14 @@ class PlotNode implements BaseNode {
         this.options = options;
     }
 
-    play(io: IO) {
-        io.out(this.text);
+    play(io: UI) {
+        io.print(this.text);
 
         for (const [key, value] of this.options) {
-            io.out(key + " " + value.text);
+            io.print(key + " " + value.text);
         }
 
-        io.in((text: string) => {
+        io.input((text: string) => {
             let choice = this.options.get(text);
             if (choice !== undefined) {
                 queue(choice.node, io);
@@ -94,7 +96,7 @@ class LinkedNode implements BaseNode {
         this.nodeName = nodeName;
     }
 
-    play(io: IO) {
+    play(io: UI) {
         io.get(this.url, (json) => {
             queue(parseJSON(JSON.parse(json)).get(this.nodeName), io);
         });
@@ -110,8 +112,8 @@ class TempNode implements BaseNode {
         this.nodeName = nodeName;
     }
 
-    play(io: IO) {
-        io.out(`This is a temporary node linked to '${this.nodeName}'.`);
+    play(io: UI) {
+        io.print(`This is a temporary node linked to '${this.nodeName}'.`);
     }
 
 }

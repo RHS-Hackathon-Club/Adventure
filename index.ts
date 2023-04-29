@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
-import {IO, parseJSON} from "./builder"
+import {UI, parseJSON} from "./builder"
 
-class StdIO implements IO {
+class StdUI implements UI {
 
     static readline = require('readline').createInterface({
         input: process.stdin,
@@ -11,16 +11,20 @@ class StdIO implements IO {
 
     static https = require("https");
     
-    out(text: string) {
+    print(text: string) {
         console.log(text);
     }
 
-    in(callback: (text: string) => void): void {
-        StdIO.readline.question("Choice: ", callback);
+    printOption(key: string, choice: string): void {
+        console.log(key + " " + choice);
+    }
+
+    input(callback: (text: string) => void): void {
+        StdUI.readline.question("Choice: ", callback);
     }
 
     get(link: string, callback: (text: string) => void): void {
-        StdIO.https.get(link, (resp) => {
+        StdUI.https.get(link, (resp) => {
             let data = "";
 
             resp.on("data", (chunk) => {
@@ -47,7 +51,7 @@ const json = `{
     "ooo": {
         "type": "text",
         "text": "hello!",
-        "node": "do paths work?"
+        "node": null
     },
     "random node" : {
         "type": "link",
@@ -56,4 +60,4 @@ const json = `{
     }
 }`
 
-parseJSON(JSON.parse(json)).get("start").play(new StdIO());
+parseJSON(JSON.parse(json)).get("start").play(new StdUI());
