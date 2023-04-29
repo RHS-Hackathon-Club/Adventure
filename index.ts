@@ -51,7 +51,7 @@ const json = `{
     },
     "random node" : {
         "type": "link",
-        "link": "https://raw.githubusercontent.com/RHS-Hackathon-Club/Adventure/master/idk.json",
+        "link": "https://raw.githubusercontent.com/RHS-Hackathon-Club/Adventure/main/idk.json",
         "nodeName": "start"
     }
 }`

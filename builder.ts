@@ -110,7 +110,10 @@ class TempNode implements BaseNode {
         this.nodeName = nodeName;
     }
 
-    play() {}
+    play(io: IO) {
+        io.out(`This is a temporary node linked to '${this.nodeName}'.`);
+    }
+
 }
 
 export function parseJSON(json: {string: any}): Map<string, BaseNode> {
