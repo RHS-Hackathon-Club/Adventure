@@ -1,0 +1,12 @@
+{
+    "start": {
+        "type": "road",
+        "text": "wow you got this from the internet so cool",
+        "next": "bob"
+    },
+    "bob": {
+        "type": "road",
+        "text": "idek what to do next",
+        "next": null
+    }
+}
