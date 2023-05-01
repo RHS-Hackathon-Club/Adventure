@@ -1,47 +1,52 @@
 #!/usr/bin/env node
 
-import {UI, parseJSON} from "./builder"
+import {IO, Game} from "./adventure"
 
-class StdUI implements UI {
+class NodeIO implements IO {
 
     static readline = require('readline').createInterface({
         input: process.stdin,
         output: process.stdout
     });
 
-    static https = require("https");
-    
-    print(text: string) {
+    displayText(text: string, callback: () => void): void {
+        console.log(text);
+        callback();
+    }
+
+    displayForkText(text: string): void {
         console.log(text);
     }
 
-    printOption(key: string, choice: string): void {
-        console.log(key + " " + choice);
+    displayForkOption(key: string, option: string): void {
+        console.log(key + " " + option);
     }
 
-    input(callback: (text: string) => void): void {
-        StdUI.readline.question("Choice: ", callback);
-    }
-
-    get(link: string, callback: (text: string) => void): void {
-        StdUI.https.get(link, (resp) => {
-            let data = "";
-
-            resp.on("data", (chunk) => {
-                data += chunk;
-            });
-
-            resp.on("end", () => {
-                callback(data);
-            });
-        })
+    choose(callback: (key: string) => void): void {
+        NodeIO.readline.question("Choice: ", callback);
     }
 
 }
 
+import {get} from "https";
+
+function getURL(url: string, callback: (text: string) => void) {
+    get(url, (resp: any) => {
+        let data = "";
+
+        resp.on("data", (chunk: string) => {
+            data += chunk;
+        });
+
+        resp.on("end", () => {
+            callback(data);
+        });
+    });
+}
+
 const json = `{
     "start": {
-        "type": "plot",
+        "type": "fork",
         "text": "ooga booga",
         "options": [
             ["1", "the text", "ooo"],
@@ -49,15 +54,16 @@ const json = `{
         ]
     },
     "ooo": {
-        "type": "text",
+        "type": "road",
         "text": "hello!",
-        "node": null
+        "next": null
     },
     "random node" : {
         "type": "link",
-        "link": "https://raw.githubusercontent.com/RHS-Hackathon-Club/Adventure/main/idk.json",
-        "nodeName": "start"
+        "url": "https://raw.githubusercontent.com/RHS-Hackathon-Club/Adventure/boss/oogieboogie.json",
+        "next": "start"
     }
 }`
 
-parseJSON(JSON.parse(json)).get("start").play(new StdUI());
+const game = new Game(json, new NodeIO(), getURL, null, () => console.log("You've reached a dead end!"));
+game.start("start");

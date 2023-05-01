@@ -1,24 +1,85 @@
 export interface UI {
 
-    print(text: string): void;
+    displayText(text: string): void;
 
-    printOption(key: string, choice: string): void;
+    displayOptionText(text: string): void;
 
-    input(callback: (text: string) => void): void;
+    displayOption(key: string, choice: string): void;
 
     get(link: string, callback: (text: string) => void): void;
 
 }
 
+// UI needs to pull at game: UI decides when game proceeds
+// game just needs to provide API to control what happens when
+
+// game.start()
+// // plays first node and waits
+// game.choose()
+// // proceeds to next node
+
+export class Game {
+
+    #next = null;
+    #ui: UI;
+    #nodes: Map<string, BaseNode>;
+    #currentPlay = Promise.resolve();
+
+    constructor(json: {string: any}, ui: UI) {
+        this.#ui = ui;
+        this.#nodes = parseJSON(json);
+    }
+
+    start(nodeName: string) {
+        const node = this.#nodes.get(nodeName);
+        this.#currentPlay = this.#currentPlay.then(node.play.bind(node, this));
+    }
+
+    choose(key: string) {
+        if (this.#next !== null) {
+            const func = this.#next;
+            this.#next = null;
+            func(key);
+        }
+        // call callback in the current node if it is a choice node or proceed to next node
+        // if it is a text node (even if it is in the middle of printing)
+    }
+
+    // when node is done playing, calls callback with next node
+    // make play() async so it can "return" a value and be one function (or .then it)
+
+    next(callback: (input: string) => void) {
+        this.#next = callback;
+    }
+
+    displayText(text: string) {
+        this.#ui.displayText(text);
+    }
+
+    displayOptionText(text: string) {
+        this.#ui.displayOptionText(text);
+
+    }
+
+    displayOption(key: string, choice: string) {
+        this.#next.displayOption(key, choice);
+    }
+
+    get(link: string, callback: (text: string) => void) {
+        this.#next.get(link, callback);
+    }
+
+}
+
 var _queue = Promise.resolve();
 
-function queue(node: BaseNode, io: UI) {
-    _queue = _queue.then(node.play.bind(node, io));
+function queue(node: BaseNode, game: Game) {
+    _queue = _queue.then(node.play.bind(node, game));
 }
 
 export interface BaseNode {
 
-    play(io: UI): void;
+    play(game: Game): void;
 
 }
 
@@ -26,8 +87,8 @@ class TBDNode implements BaseNode {
 
     private constructor() { }
 
-    play(io: UI) {
-        io.print("You've reached a dead end!");
+    play(game: Game) {
+        game.displayText("You've reached a dead end!");
     }
 
     static #node: TBDNode;
@@ -52,9 +113,9 @@ class TextNode implements BaseNode {
         this.node = node;
     }
 
-    play(io: UI) {
-        io.print(this.text);
-        queue(this.node, io);
+    play(game: Game) {
+        game.next(this.node.play.bind(this.node, game));
+        game.displayText(this.text);
     }
 
 }
@@ -69,19 +130,19 @@ class PlotNode implements BaseNode {
         this.options = options;
     }
 
-    play(io: UI) {
-        io.print(this.text);
+    async play(game: Game) {
+        game.displayOptionText(this.text);
 
         for (const [key, value] of this.options) {
-            io.print(key + " " + value.text);
+            game.displayOption(key, value.text);
         }
 
-        io.input((text: string) => {
+        game.next((text: string) => {
             let choice = this.options.get(text);
             if (choice !== undefined) {
-                queue(choice.node, io);
+                queue(choice.node, game);
             }
-        })
+        });
     }
 
 }
@@ -96,29 +157,29 @@ class LinkedNode implements BaseNode {
         this.nodeName = nodeName;
     }
 
-    play(io: UI) {
-        io.get(this.url, (json) => {
-            queue(parseJSON(JSON.parse(json)).get(this.nodeName), io);
+    play(game: Game) {
+        game.get(this.url, (json) => {
+            queue(parseJSON(JSON.parse(json)).get(this.nodeName), game);
         });
     }
 
 }
 
 class TempNode implements BaseNode {
-    
+
     nodeName: string;
 
     constructor(nodeName: string) {
         this.nodeName = nodeName;
     }
 
-    play(io: UI) {
-        io.print(`This is a temporary node linked to '${this.nodeName}'.`);
+    play(game: Game) {
+        game.displayText(`This is a temporary node linked to '${this.nodeName}'.`);
     }
 
 }
 
-export function parseJSON(json: {string: any}): Map<string, BaseNode> {
+function parseJSON(json: {string: any}): Map<string, BaseNode> {
     const nodes: Map<string, BaseNode> = new Map();
 
     for (const [nodeName, node] of Object.entries(json)) {
