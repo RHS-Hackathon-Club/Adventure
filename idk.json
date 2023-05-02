@@ -1,12 +1,20 @@
 {
     "start": {
-        "type": "text",
-        "text": "wow you got this from the internet so cool",
-        "node": "bob"
+        "type": "fork",
+        "text": "ooga booga",
+        "options": [
+            ["1", "the text", "ooo"],
+            ["2", "or this hapens", "random node"]
+        ]
     },
-    "bob": {
-        "type": "text",
-        "text": "idek what to do next",
-        "node": null
+    "ooo": {
+        "type": "road",
+        "text": "hello!",
+        "next": null
+    },
+    "random node" : {
+        "type": "link",
+        "url": "https://raw.githubusercontent.com/RHS-Hackathon-Club/Adventure/boss/oogieboogie.json",
+        "next": "start"
     }
 }

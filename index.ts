@@ -44,26 +44,18 @@ function getURL(url: string, callback: (text: string) => void) {
     });
 }
 
-const json = `{
-    "start": {
-        "type": "fork",
-        "text": "ooga booga",
-        "options": [
-            ["1", "the text", "ooo"],
-            ["2", "or this hapens", "random node"]
-        ]
-    },
-    "ooo": {
-        "type": "road",
-        "text": "hello!",
-        "next": null
-    },
-    "random node" : {
-        "type": "link",
-        "url": "https://raw.githubusercontent.com/RHS-Hackathon-Club/Adventure/boss/oogieboogie.json",
-        "next": "start"
-    }
-}`
+import {readFile} from "fs"
 
-const game = new Game(json, new NodeIO(), getURL, null, () => console.log("You've reached a dead end!"));
-game.start("start");
+function getPath(path: string, callback: (text: string) => void) {
+    readFile(path, "utf8", (err, data) => {
+        if (err) {
+            throw err;
+        } else {
+            callback(data);
+        }
+    })
+}
+
+getPath("./idk.json", (json: string) => {
+    new Game(json, new NodeIO(), getURL, getPath, () => console.log("You've reached a dead end!")).start("start");
+});
